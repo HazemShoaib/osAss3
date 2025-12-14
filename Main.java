@@ -1,10 +1,59 @@
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+
 class userinterface{
 
+    Scanner inputScanner = new Scanner(System.in);
     void display (String message){
         System.out.println(message);
     }
 
+    String getInputFor (String prompt){
+        System.out.println(prompt);
+        return inputScanner.nextLine();
+    }
+
+    int getInputIntFor (String prompt){
+        System.out.println(prompt);
+        return Integer.parseInt(inputScanner.nextLine());
+    }
+
+    Process getProcessInput(int processNumber, int defaultQuantum){
+        while (true) {
+            String name = getInputFor("Enter name for Process " + processNumber + ": ");
+            int arrivalTime = getInputIntFor("Enter arrival time for Process " + processNumber + ": ");
+            int burstTime = getInputIntFor("Enter burst time for Process " + processNumber + ": ");
+            int priority = getInputIntFor("Enter priority for Process " + processNumber + ": ");
+            if (verifyEntry(new Process(name, arrivalTime, burstTime, priority, defaultQuantum))) {
+                return new Process(name, arrivalTime, burstTime, priority, defaultQuantum);
+            }
+        }
+    }
     
+    boolean verifyEntry(Process process){
+        if (process.getArrivalTime() < 0 || process.getBurstTime() <= 0 || process.getPriority() < 0) {
+            display("Invalid entry for process: " + process.getName() + ".\n Please re-enter the details.");
+            return false;
+        }
+        return true;
+    }
+
+    void displayEntries(List<Process> processes, int contextSwitchingTime, int rrTimeQuantum){
+        display("Configuration Loaded:");
+        display("Processes: " + processes.size() 
+                + "\nContext Switching Time: " + contextSwitchingTime
+                + "\nRound Robin Time Quantum: " + rrTimeQuantum);
+        display("Process Entries:");
+        for (Process process : processes) {
+            display("Name: " + process.getName() +
+                    ", Arrival Time: " + process.getArrivalTime() +
+                    ", Burst Time: " + process.getBurstTime() +
+                    ", Priority: " + process.getPriority() +
+                    ", Quantum: " + process.getQuantum());
+        }
+    }
+
 }
 
 class Process {
@@ -64,6 +113,20 @@ class Process {
 
 class main {
     public static void main(String[] args) {
-        System.out.println("Hello, World!");
+        
+        userinterface ui = new userinterface();
+        
+        int numProcesses = ui.getInputIntFor("Enter number of processes: ");
+        int rrTimeQuantum = ui.getInputIntFor("Enter Round Robin Time Quantum: ");
+        int contextSwitchingTime = ui.getInputIntFor("Enter Context Switching Time: ");
+
+        List<Process> processes = new ArrayList<>();
+
+        for (int i = 0; i < numProcesses; i++) {
+            processes.add(ui.getProcessInput(i + 1, rrTimeQuantum));
+        }
+
+
+        ui.displayEntries(processes, contextSwitchingTime, rrTimeQuantum);
     }
 }
