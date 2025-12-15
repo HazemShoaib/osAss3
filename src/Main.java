@@ -1,0 +1,360 @@
+import java.util.*;
+
+class userinterface{
+
+    Scanner inputScanner = new Scanner(System.in);
+    void display (String message){
+        System.out.println(message);
+    }
+
+    String getInputFor (String prompt){
+        System.out.println(prompt);
+        return inputScanner.nextLine();
+    }
+
+    int getInputIntFor (String prompt){
+        System.out.println(prompt);
+        return Integer.parseInt(inputScanner.nextLine());
+    }
+
+    Process getProcessInput(int processNumber, int defaultQuantum){
+        while (true) {
+            String name = getInputFor("Enter name for Process " + processNumber + ": ");
+            int arrivalTime = getInputIntFor("Enter arrival time for Process " + processNumber + ": ");
+            int burstTime = getInputIntFor("Enter burst time for Process " + processNumber + ": ");
+            int priority = getInputIntFor("Enter priority for Process " + processNumber + ": ");
+            if (verifyEntry(new Process(name, arrivalTime, burstTime, priority, defaultQuantum))) {
+                return new Process(name, arrivalTime, burstTime, priority, defaultQuantum);
+            }
+        }
+    }
+
+    boolean verifyEntry(Process process){
+        if (process.getArrivalTime() < 0 || process.getBurstTime() <= 0 || process.getPriority() < 0) {
+            display("Invalid entry for process: " + process.getName() + ".\n Please re-enter the details.");
+            return false;
+        }
+        return true;
+    }
+
+    void displayEntries(List<Process> processes, int contextSwitchingTime, int rrTimeQuantum){
+        display("Configuration Loaded:");
+        display("Processes: " + processes.size()
+                + "\nContext Switching Time: " + contextSwitchingTime
+                + "\nRound Robin Time Quantum: " + rrTimeQuantum);
+        display("Process Entries:");
+        for (Process process : processes) {
+            display("Name: " + process.getName() +
+                    ", Arrival Time: " + process.getArrivalTime() +
+                    ", Burst Time: " + process.getBurstTime() +
+                    ", Priority: " + process.getPriority() +
+                    ", Quantum: " + process.getQuantum());
+        }
+    }
+
+}
+
+class Process {
+    private String name;
+    private int arrivalTime;
+    private int burstTime;
+    private int priority;
+    private int quantum;
+
+    private int remainingTime;
+    private int completionTime;
+
+    private int waitingTime;
+    private int turnaroundTime;
+    private int averageWaitingTime;
+    private int averageTurnaroundTime;
+
+    public Process(String name, int arrivalTime, int burstTime, int priority, int quantum) {
+        this.name = name;
+        this.arrivalTime = arrivalTime;
+        this.burstTime = burstTime;
+        this.priority = priority;
+        this.quantum = quantum;
+        this.remainingTime = burstTime;
+    }
+    //    another constructor for some algorithms
+    public Process(String n, int a, int b, int p) {
+        this.name = n;
+        this.arrivalTime = a;
+        this.burstTime = b;
+        this.priority = p;
+        this.remainingTime = b;
+    }
+
+    // Getters and Setters
+    public String getName() { return name; }
+    public int getArrivalTime() { return arrivalTime; }
+    public int getBurstTime() { return burstTime; }
+    public int getPriority() { return priority; }
+    public int getQuantum() { return quantum; }
+    public void setQuantum(int quantum) { this.quantum = quantum; }
+
+    public int getRemainingTime() { return remainingTime; }
+    public void setRemainingTime(int remainingTime) { this.remainingTime = remainingTime; }
+
+    public int getCompletionTime() { return completionTime; }
+    public void setCompletionTime(int completionTime) { this.completionTime = completionTime; }
+
+    public int getAvgWaitingTime() { return averageWaitingTime; }
+    public void setAvgWaitingTime(int averageWaitingTime) { this.averageWaitingTime = averageWaitingTime; }
+
+    public int getAvgTurnaroundTime() { return averageTurnaroundTime; }
+    public void setAvgTurnaroundTime(int averageTurnaroundTime) { this.averageTurnaroundTime = averageTurnaroundTime; }
+
+    public int getWaitingTime() { return waitingTime; }
+    public void setWaitingTime(int waitingTime) { this.waitingTime = waitingTime; }
+
+    public int getTurnaroundTime() { return turnaroundTime; }
+    public void setTurnaroundTime(int turnaroundTime) { this.turnaroundTime = turnaroundTime; }
+
+    public boolean isFinished() {
+        return remainingTime == 0;
+    }
+}
+
+// the class of algorithms and the print
+class Scheduler {
+    // ==================algorithms==============================
+    public static void roundRobin(
+            ArrayList<Process> processes,
+            int quantum,
+            int contextSwitch
+    ) {
+        ArrayList<Process> list = new ArrayList<>();
+        for (Process p : processes)
+            list.add(new Process(
+                    p.getName(),
+                    p.getArrivalTime(),
+                    p.getBurstTime(),
+                    p.getPriority()
+            ));
+
+        list.sort(Comparator.comparingInt(Process::getArrivalTime));
+
+        Queue<Process> queue = new LinkedList<>();
+        int time = 0;
+        int idx = 0;
+        ArrayList<String> order = new ArrayList<>();
+
+        while (idx < list.size() && list.get(idx).getArrivalTime() <= time)
+            queue.add(list.get(idx++));
+
+        while (!queue.isEmpty() || idx < list.size()) {
+
+            if (queue.isEmpty()) {
+                time = list.get(idx).getArrivalTime();
+                while (idx < list.size() && list.get(idx).getArrivalTime() <= time)
+                    queue.add(list.get(idx++));
+            }
+
+            Process current = queue.poll();
+            order.add(current.getName());
+
+            int execTime = Math.min(quantum, current.getRemainingTime());
+
+            time += execTime;
+            current.setRemainingTime(current.getRemainingTime() - execTime);
+
+            while (idx < list.size() && list.get(idx).getArrivalTime() <= time)
+                queue.add(list.get(idx++));
+
+            if (current.getRemainingTime() == 0) {
+                current.setCompletionTime(time);
+            } else {
+                queue.add(current);
+            }
+
+            if (!queue.isEmpty() || idx < list.size()) {
+                time += contextSwitch;
+                while (idx < list.size() && list.get(idx).getArrivalTime() <= time)
+                    queue.add(list.get(idx++));
+            }
+        }
+
+        for (Process p : list) {
+            p.setTurnaroundTime(p.getCompletionTime() - p.getArrivalTime());
+            p.setWaitingTime(p.getTurnaroundTime() - p.getBurstTime());
+        }
+
+        printRR(list, order, quantum, contextSwitch);
+    }
+
+    // =========================================================================
+
+    public static void preemptiveSJF(
+            ArrayList<Process> processes,
+            int contextSwitch
+    ) {
+        ArrayList<Process> list = new ArrayList<>();
+        for (Process p : processes)
+            list.add(new Process(
+                    p.getName(),
+                    p.getArrivalTime(),
+                    p.getBurstTime(),
+                    p.getPriority()
+            ));
+
+        list.sort(Comparator.comparingInt(Process::getArrivalTime));
+
+        ArrayList<String> order = new ArrayList<>();
+        int time = 0, completed = 0, idx = 0;
+
+        PriorityQueue<Process> readyQueue = new PriorityQueue<>(
+                Comparator.comparingInt(Process::getRemainingTime)
+                        .thenComparingInt(Process::getArrivalTime)
+        );
+
+        Process current = null;
+        boolean needContextSwitch = false;
+
+        while (completed < list.size()) {
+
+            while (idx < list.size() && list.get(idx).getArrivalTime() <= time)
+                readyQueue.add(list.get(idx++));
+
+            if (needContextSwitch) {
+                time += contextSwitch;
+                while (idx < list.size() && list.get(idx).getArrivalTime() <= time)
+                    readyQueue.add(list.get(idx++));
+                needContextSwitch = false;
+            }
+
+            Process shortest = readyQueue.peek();
+
+            if (current == null ||
+                    (shortest != null &&
+                            shortest.getRemainingTime() < current.getRemainingTime())) {
+
+                if (current != null && current.getRemainingTime() > 0) {
+                    readyQueue.add(current);
+                    order.add(current.getName());
+                    needContextSwitch = true;
+                }
+
+                if (shortest != null) {
+                    current = readyQueue.poll();
+                    order.add(current.getName());
+                }
+            }
+
+            if (current != null) {
+                current.setRemainingTime(current.getRemainingTime() - 1);
+                time++;
+
+                if (current.getRemainingTime() == 0) {
+                    current.setCompletionTime(time);
+                    completed++;
+                    order.add(current.getName());
+                    needContextSwitch = true;
+                    current = null;
+                }
+            } else {
+                time++;
+            }
+        }
+
+        for (Process p : list) {
+            p.setTurnaroundTime(p.getCompletionTime() - p.getArrivalTime());
+            p.setWaitingTime(p.getTurnaroundTime() - p.getBurstTime());
+        }
+
+        printSJF(list, order, contextSwitch);
+    }
+
+    // ===========================prints==============================================
+
+    private static void printRR(ArrayList<Process> ps, ArrayList<String> order,
+                                int quantum, int contextSwitch) {
+
+        double w = 0, t = 0;
+
+        System.out.println("\n========= ROUND ROBIN SCHEDULING =========");
+        System.out.println("Quantum: " + quantum + ", Context Switch: " + contextSwitch);
+        System.out.println("Execution Order: " + order);
+        System.out.println("\nProcess  Arrival  Burst  Waiting  Turnaround");
+        System.out.println("---------------------------------------------");
+
+        for (Process p : ps) {
+            System.out.printf("%-8s%-9d%-7d%-9d%-11d\n",
+                    p.getName(),
+                    p.getArrivalTime(),
+                    p.getBurstTime(),
+                    p.getWaitingTime(),
+                    p.getTurnaroundTime());
+
+            w += p.getWaitingTime();
+            t += p.getTurnaroundTime();
+        }
+
+        System.out.printf("Average Waiting Time: %.2f\n", w / ps.size());
+        System.out.printf("Average Turnaround Time: %.2f\n", t / ps.size());
+    }
+
+    private static void printSJF(ArrayList<Process> ps, ArrayList<String> order,
+                                 int contextSwitch) {
+
+        ArrayList<String> compressed = new ArrayList<>();
+        String last = "";
+
+        for (String s : order) {
+            if (!s.equals(last)) {
+                compressed.add(s);
+                last = s;
+            }
+        }
+
+        double w = 0, t = 0;
+
+        System.out.println("\n========= PREEMPTIVE SJF SCHEDULING =========");
+        System.out.println("Context Switch: " + contextSwitch);
+        System.out.println("Execution Order: " + compressed);
+        System.out.println("\nProcess  Arrival  Burst  Waiting  Turnaround");
+
+        for (Process p : ps) {
+            System.out.printf("%-8s%-9d%-7d%-9d%-11d\n",
+                    p.getName(),
+                    p.getArrivalTime(),
+                    p.getBurstTime(),
+                    p.getWaitingTime(),
+                    p.getTurnaroundTime());
+
+            w += p.getWaitingTime();
+            t += p.getTurnaroundTime();
+        }
+
+        System.out.printf("Average Waiting Time: %.2f\n", w / ps.size());
+        System.out.printf("Average Turnaround Time: %.2f\n", t / ps.size());
+    }
+}
+
+
+
+class Main {
+    public static void main(String[] args) {
+
+        userinterface ui = new userinterface();
+
+        int numProcesses = ui.getInputIntFor("Enter number of processes: ");
+        int rrTimeQuantum = ui.getInputIntFor("Enter Round Robin Time Quantum: ");
+        int contextSwitchingTime = ui.getInputIntFor("Enter Context Switching Time: ");
+
+        ArrayList<Process> processes = new ArrayList<>();
+
+        for (int i = 0; i < numProcesses; i++) {
+            processes.add(ui.getProcessInput(i + 1, rrTimeQuantum));
+        }
+
+        ui.displayEntries(processes, contextSwitchingTime, rrTimeQuantum);
+
+        System.out.println("\n================ RUNNING ROUND ROBIN ================");
+        Scheduler.roundRobin(processes, rrTimeQuantum, contextSwitchingTime);
+
+        System.out.println("\n================ RUNNING PREEMPTIVE SJF ================");
+        Scheduler.preemptiveSJF(processes, contextSwitchingTime);
+    }
+}
