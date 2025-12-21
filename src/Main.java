@@ -671,6 +671,7 @@ class Main {
         int numProcesses = 0;
         int rrTimeQuantum = 0;
         int contextSwitchingTime = 0;
+        int agingInterval = 0;
 
         int schedulerChoice = ui.getInputIntFor("Choose which schedulers to run:\n1. Round Robin\n2. Preemptive SJF\n3. Preemptive Priority\n4. AG Scheduler\n5. Exit\nEnter your choice (1-5): ");
         if (schedulerChoice < 1 || schedulerChoice > 5) {
@@ -685,7 +686,7 @@ class Main {
             numProcesses = ui.getInputIntFor("Enter number of processes: ");
             rrTimeQuantum = ui.getInputIntFor("Enter Round Robin Time Quantum: ");
             contextSwitchingTime = ui.getInputIntFor("Enter Context Switching Time: ");
-            int agingInterval = ui.getInputIntFor("Enter Aging Interval for Priority Scheduling: ");
+            agingInterval = ui.getInputIntFor("Enter Aging Interval for Priority Scheduling: ");
         }
         else{
             numProcesses = ui.getInputIntFor("Enter number of processes: ");
