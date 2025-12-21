@@ -409,7 +409,7 @@ class Scheduler {
     printPriority(list, order, contextSwitch);
     }
 
-    //=====================================================================
+    //================================ AG ===================================
 
     public static void AGsceduler(ArrayList<Process> processes, int contextSwitch) {
         
@@ -419,7 +419,8 @@ class Scheduler {
                     p.getName(),
                     p.getArrivalTime(),
                     p.getBurstTime(),
-                    p.getPriority()
+                    p.getPriority(),
+                    p.getQuantum()
             ));
         
         activProcesses.sort(Comparator.comparingInt(Process::getArrivalTime));
@@ -460,6 +461,12 @@ class Scheduler {
             currProcess.setRemainingTime(currProcess.getRemainingTime() - 1);
             currProccessTime++;
             currTime++;
+
+            for (Process p : activProcesses){
+                if (p.getArrivalTime() == currTime && !p.isFinished() && p != currProcess && !readyQueue.contains(p)) {
+                    readyQueue.add(p);
+                }
+            }
 
             if (currProcess.isFinished()){
                 currProcess.setCompletionTime(currTime);
@@ -507,7 +514,9 @@ class Scheduler {
                     }
                 }
                 
-                if(shortestProccess != null && currProcess.getRemainingTime() > shortestProccess.getRemainingTime()) {
+                if(shortestProccess != null && 
+                   currProcess.getRemainingTime() > shortestProccess.getRemainingTime() &&
+                   currProcess.getRemainingTime() > (quantum - currProccessTime)) {
                     int remQ = quantum - currProccessTime;
                     currProcess.setQuantum (currProcess.getQuantum() + remQ);
                     readyQueue.add(currProcess);
