@@ -24,11 +24,16 @@ class userinterface{
             int arrivalTime = getInputIntFor("Enter arrival time for Process " + processNumber + ": ");
             int burstTime = getInputIntFor("Enter burst time for Process " + processNumber + ": ");
             int priority = getInputIntFor("Enter priority for Process " + processNumber + ": ");
+            if (defaultQuantum < 0) {
+                defaultQuantum = getInputIntFor("Enter quantum for Process " + processNumber + ": ");
+            }
             if (verifyEntry(new Process(name, arrivalTime, burstTime, priority, defaultQuantum))) {
                 return new Process(name, arrivalTime, burstTime, priority, defaultQuantum);
             }
         }
     }
+
+    
 
     boolean verifyEntry(Process process){
         if (process.getArrivalTime() < 0 || process.getBurstTime() <= 0 || process.getPriority() < 0) {
@@ -668,29 +673,52 @@ class Main {
     public static void main(String[] args) {
 
         userinterface ui = new userinterface();
+        int numProcesses = 0;
+        int rrTimeQuantum = 0;
+        int contextSwitchingTime = 0;
 
-        int numProcesses = ui.getInputIntFor("Enter number of processes: ");
-        int rrTimeQuantum = ui.getInputIntFor("Enter Round Robin Time Quantum: ");
-        int contextSwitchingTime = ui.getInputIntFor("Enter Context Switching Time: ");
-
+        int schedulerChoice = ui.getInputIntFor("Choose which schedulers to run:\n1. Round Robin\n2. Preemptive SJF\n3. Preemptive Priority\n4. AG Scheduler\n5. Exit\nEnter your choice (1-5): ");
+        if (schedulerChoice < 1 || schedulerChoice > 5) {
+            ui.display("Invalid choice. Exiting program.");
+            return;
+        }
+        else if (schedulerChoice == 5) {
+            ui.display("Exiting program.");
+            return;
+        }
+        else if (schedulerChoice >= 1 && schedulerChoice <= 3) {
+            numProcesses = ui.getInputIntFor("Enter number of processes: ");
+            rrTimeQuantum = ui.getInputIntFor("Enter Round Robin Time Quantum: ");
+            contextSwitchingTime = ui.getInputIntFor("Enter Context Switching Time: ");
+        }
+        else{
+            numProcesses = ui.getInputIntFor("Enter number of processes: ");
+        }
         ArrayList<Process> processes = new ArrayList<>();
 
         for (int i = 0; i < numProcesses; i++) {
-            processes.add(ui.getProcessInput(i + 1, rrTimeQuantum));
+            processes.add(ui.getProcessInput(i + 1, -1));
         }
 
         ui.displayEntries(processes, contextSwitchingTime, rrTimeQuantum);
 
-        System.out.println("\n================ RUNNING ROUND ROBIN ================");
-        Scheduler.roundRobin(processes, rrTimeQuantum, contextSwitchingTime);
-
-        System.out.println("\n================ RUNNING PREEMPTIVE SJF ================");
-        Scheduler.preemptiveSJF(processes, contextSwitchingTime);
-
-        System.out.println("\n================ RUNNING PREEMPTIVE PRIORITY ================");
-        Scheduler.preemptivePriority(processes, contextSwitchingTime);
-
-        System.out.println("\n================ RUNNING AG SCHEDULER ================");
-        Scheduler.AGsceduler(processes, contextSwitchingTime);
+        switch (schedulerChoice) {
+            case 1:
+                System.out.println("\n================ RUNNING ROUND ROBIN ================");
+                Scheduler.roundRobin(processes, rrTimeQuantum, contextSwitchingTime);
+                break;
+            case 2:
+                System.out.println("\n================ RUNNING PREEMPTIVE SJF ================");
+                Scheduler.preemptiveSJF(processes, contextSwitchingTime);
+                break;
+            case 3:
+                System.out.println("\n================ RUNNING PREEMPTIVE PRIORITY ================");
+                Scheduler.preemptivePriority(processes, contextSwitchingTime);
+                break;
+            case 4:
+                System.out.println("\n================ RUNNING AG SCHEDULER ================");
+                Scheduler.AGsceduler(processes, 0);
+                break;
+        }
     }
 }
